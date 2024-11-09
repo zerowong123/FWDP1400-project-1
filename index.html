@@ -1,0 +1,523 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+
+        }
+
+        #main {
+
+            width: 400px;
+            height: 600px;
+            background: url(image/background_1.png);
+            margin: 5em auto;
+            position: relative;
+            overflow: hidden;
+        }
+
+        #title {
+            font-size: 18px;
+        }
+
+
+
+        #stop {
+            width: 400px;
+            height: 400px;
+            padding-top: 200px;
+            position: absolute;
+            z-index: 10;
+            background-color: rgba(0, 0, 0, 0.6);
+            left: 50%;
+            margin-left: -200px;
+            top: 0px;
+            display: none;
+        }
+
+        .button {
+            width: 150px;
+            height: 50px;
+            color: #ffffff;
+            background-color: rgba(0, 0, 0, 0.6);
+            text-align: center;
+            line-height: 50px;
+            border-radius: 20px;
+            font-size: 20px;
+            font-weight: bolder;
+            margin: 0 auto;
+            margin-top: 10px;
+            cursor: pointer;
+        }
+    </style>
+</head>
+
+<body>
+    <div id="main">
+        <div id="title">
+            <div>killed: <span id="killnum">0</span></div>
+            <div>Points: <span id="point">0</span></div>
+            <div>Blood: <span id="player">3</span></div>
+
+        </div>
+
+        <div id="stop">
+
+            <div class="button" onclick="newgame()">New Game</div>
+        </div>
+        <audio src="audio/bgm_dfzhandou.mp3" id="background"></audio>
+        <audio src="audio/arrow_shot.wav" id="bullet"></audio>
+        <audio src="audio/behit.wav" id="crash"></audio>
+    </div>
+    <script>
+        var mainobj = document.getElementById("main");
+        var smallplanearray = [];
+        var bulletarray = [];
+        var btnup = false;
+        var btndown = false;
+        var btnleft = false;
+        var btnright = false;
+        var btnsh = false;
+        var killnum = document.getElementById('killnum');
+        var points = document.getElementById('point');
+        var blood = document.getElementById('player');
+        var stop = document.getElementById('stop');
+        var smallplanetimer = setInterval(createSmallPlane, 1000);
+        var smallplanemovetimer = setInterval(smallplanemove, 50);
+        var ctrlplaytimer = setInterval(btnpress, 50);
+        var bulletmovetimer = setInterval(bulletmove, 50);
+        var crashchecktimer = setInterval(crashbody, 50);
+        var crashbodytimer = setInterval(crashshoot, 50);
+        var backgroundmusic = document.getElementById("background");
+        var bulletmusic = document.getElementById("bullet");
+        var crashmusic = document.getElementById("crash");
+     
+        
+        stop.style.display="block";
+        mystopgame();
+       backgroundmusic.loop= true;
+       function startmusicf(){
+        
+        document.body.addEventListener("keydown", function(){
+            if(getComputedStyle(stop).display !== "block"){
+            backgroundmusic.play();}
+        })
+    }
+
+
+        function smallplanef(imsrc, x, y, speed) {
+            this.imgnode = document.createElement("img");
+            this.imgsrc = imsrc;
+            this.x = x;
+            this.y = y;
+            this.speed = speed;
+            this.dead = false;
+            this.timer = 10;
+
+            this.init = function () {
+                this.imgnode.src = this.imgsrc;
+                this.imgnode.style.position = "absolute";
+                this.imgnode.style.left = this.x + "px";
+                this.imgnode.style.top = this.y + "px";
+                mainobj.appendChild(this.imgnode);
+            }
+            this.init();
+            this.move = function () {
+                this.imgnode.style.top = parseInt(this.imgnode.style.top) + this.speed + "px";
+
+
+            }
+        }
+
+        function myplanef(imsrc, x, y, speed) {
+            this.imgnode = document.createElement("img");
+            this.imgsrc = imsrc;
+            this.x = x;
+            this.y = y;
+            this.speed = speed;
+            this.timer = 10;
+            this.timer2 = 2;
+            this.init = function () {
+                this.imgnode.src = this.imgsrc;
+                this.imgnode.style.position = "absolute";
+                this.imgnode.style.left = this.x + "px";
+                this.imgnode.style.top = this.y + "px";
+                mainobj.appendChild(this.imgnode);
+
+            }
+            this.init();
+            this.moveleft = function () {
+
+                if (parseInt(this.imgnode.style.left) >= 0) {
+                    this.imgnode.style.left = parseInt(this.imgnode.style.left) - this.speed + "px";
+                }
+
+            }
+            this.moveright = function () {
+                if (parseInt(this.imgnode.style.left) <= 334) {
+                    this.imgnode.style.left = parseInt(this.imgnode.style.left) + this.speed + "px";
+                }
+            }
+            this.movedown = function () {
+                if (parseInt(this.imgnode.style.top) <= 520) {
+                    this.imgnode.style.top = parseInt(this.imgnode.style.top) + this.speed + "px";
+                }
+
+            }
+
+            this.moveup = function () {
+                if (parseInt(this.imgnode.style.top) >= 0) {
+                    this.imgnode.style.top = parseInt(this.imgnode.style.top) - this.speed + "px";
+                }
+
+            }
+
+        }
+
+        var myplane = new myplanef("image/myplane.gif", 167, 500, 10);
+
+        function bulletf(imgsrc, x, y, speed) {
+            this.imgnode = document.createElement("img");
+            this.imgsrc = imgsrc;
+            this.x = x;
+            this.y = y;
+            this.speed = speed;
+            this.init = function () {
+                this.imgnode.src = this.imgsrc;
+                this.imgnode.style.position = "absolute";
+                this.imgnode.style.left = parseInt(myplane.imgnode.style.left) + 31 + "px";
+                this.imgnode.style.top = myplane.imgnode.style.top;
+                mainobj.appendChild(this.imgnode);
+            }
+            this.init();
+
+            this.move = function () {
+                this.imgnode.style.top = parseInt(this.imgnode.style.top) - this.speed + "px";
+            }
+
+
+
+        }
+
+
+
+
+
+        document.body.onkeydown = function () {
+            var e = window.event || arguments[0];
+            if (e.keyCode == 37) {
+                btnleft = true;
+            }
+            if (e.keyCode == 39) {
+                btnright = true;
+            }
+            if (e.keyCode == 38) {
+                btnup = true;
+            }
+            if (e.keyCode == 40) {
+                btndown = true;
+            }
+/*             if (e.keyCode == 32 && btnsh != true) {
+                btnsh = true;
+                createbullet();
+                bulletmusic.play();
+
+            } */
+            //auto shoot
+             if (e.keyCode == 32) {
+                btnsh = true;
+            }
+
+
+        }
+
+                //auto shoot
+          function bulletbtnpress(){
+        if(btnsh == true){
+        
+            createbullet();                    
+         }         
+     }
+    setInterval(bulletbtnpress,50); 
+
+        document.body.addEventListener('keyup', function (e) {
+            if (e.keyCode == 37) {
+                btnleft = false;
+            }
+            if (e.keyCode == 39) {
+                btnright = false;
+            }
+            if (e.keyCode == 38) {
+                btnup = false;
+            }
+            if (e.keyCode == 40) {
+                btndown = false;
+            }
+            if (e.keyCode == 32) {
+                btnsh = false;
+            }
+
+
+        });
+
+
+        function createbullet() {
+            var bullet = new bulletf("image/bullet1.png", parseInt(myplane.imgnode.style.left) + 31, parseInt(myplane.imgnode.style.top), 20);
+            bulletarray.push(bullet);
+
+        }
+
+        function btnpress() {
+            if (btnleft == true) {
+                myplane.moveleft();
+            }
+            if (btnright == true) {
+                myplane.moveright();
+            }
+            if (btnup == true) {
+                myplane.moveup();
+            }
+            if (btndown == true) {
+                myplane.movedown();
+            }
+
+
+        }
+
+
+   
+
+
+
+        function bulletmove() {
+
+            for (var i = 0; i < bulletarray.length; i++) {
+                bulletarray[i].move();
+
+            }
+
+        }
+
+
+
+
+        function createSmallPlane() {
+            if(Math.floor(Math.random()*10) >=2 ){
+                var smallplane = new smallplanef("image/enemy3_fly_1.png", parseInt(Math.random() * 356), parseInt(Math.random() * 60), parseInt(Math.random() * 10) + 1);
+                smallplanearray.push(smallplane);
+                
+
+            }else{
+            var smallplane = new smallplanef("image/enemy1_fly_1.png", parseInt(Math.random() * 356), parseInt(Math.random() * 60), parseInt(Math.random() * 10) + 1);
+            smallplanearray.push(smallplane);
+            
+        }
+    }
+
+
+
+        function smallplanemove() {
+
+            for (var i = 0; i < smallplanearray.length; i++) {
+                if (smallplanearray[i].dead == false) {
+                    smallplanearray[i].move();
+                    if (parseInt(smallplanearray[i].imgnode.style.top) >= 600) {
+                        mainobj.removeChild(smallplanearray[i].imgnode);
+                        smallplanearray.splice(i, 1);
+                    }
+                } else {
+                    smallplanearray[i].timer--;
+                    if (smallplanearray[i].timer == 0) {
+
+                        mainobj.removeChild(smallplanearray[i].imgnode);
+                        smallplanearray.splice(i, 1);
+                    }
+                }
+            }
+        }
+
+
+        function crashshoot() {
+            for (var i = 0; i < smallplanearray.length; i++) {
+                for (var j = 0; j < bulletarray.length; j++) {
+
+
+                    var bullleft = parseInt(bulletarray[j].imgnode.style.left);
+                    var planeleft = parseInt(smallplanearray[i].imgnode.style.left);
+                    var bulltop = parseInt(bulletarray[j].imgnode.style.top);
+                    var planetop = parseInt(smallplanearray[i].imgnode.style.top);
+                    var myplaneleft = parseInt(myplane.imgnode.style.left);
+                    var myplanetop = parseInt(myplane.imgnode.style.top);
+
+                    if (bullleft >= planeleft && bullleft <= planeleft + 34 && bulltop >= planetop && bulltop <= planetop + 24) {
+
+                        if (/enemy3_fly_1\.png$/.test(smallplanearray[i].imgnode.src)) {
+                        smallplanearray[i].imgnode.src = "image/boom2.gif";
+                        smallplanearray[i].dead = true;
+                        killnum.innerHTML = parseInt(killnum.innerHTML) + 1;
+                        points.innerHTML = parseInt(points.innerHTML) + 2
+                        mainobj.removeChild(bulletarray[j].imgnode);
+                        bulletarray.splice(j, 1);
+
+                    }
+                    if (/enemy1_fly_1\.png$/.test(smallplanearray[i].imgnode.src)){
+                    smallplanearray[i].imgnode.src = "image/boom.gif";
+                        smallplanearray[i].dead = true;
+                        killnum.innerHTML = parseInt(killnum.innerHTML) + 1;
+                        points.innerHTML = parseInt(points.innerHTML) + 10
+                        mainobj.removeChild(bulletarray[j].imgnode);
+                        bulletarray.splice(j, 1);
+
+                } 
+                crashmusic.play()
+                        
+                }
+
+                }
+
+            }
+
+        }
+
+        function mystopgame() {
+            stop.style.display = "block";
+            clearInterval(smallplanetimer);
+            clearInterval(smallplanemovetimer);
+            clearInterval(ctrlplaytimer);
+            clearInterval(bulletmovetimer);
+            clearInterval(crashchecktimer);
+            clearInterval(crashbodytimer);
+           backgroundmusic.pause();
+
+        }
+
+        function crashbody() {
+            for (var i = 0; i < smallplanearray.length; i++) {
+
+
+
+                var planeleft = parseInt(smallplanearray[i].imgnode.style.left);
+                var planetop = parseInt(smallplanearray[i].imgnode.style.top);
+                var myplaneleft = parseInt(myplane.imgnode.style.left);
+                var myplanetop = parseInt(myplane.imgnode.style.top);
+
+                if (myplaneleft <= planeleft + 34 && myplaneleft + 66 >= planeleft && myplanetop <= planetop + 24 && myplanetop + 80 >= planetop) {
+
+                    if (/enemy3_fly_1\.png$/.test(smallplanearray[i].imgnode.src)) {
+                        smallplanearray[i].imgnode.src = "image/boom2.gif";
+                        
+
+                    }
+                    if (/enemy1_fly_1\.png$/.test(smallplanearray[i].imgnode.src)) {
+                        
+                    smallplanearray[i].imgnode.src = "image/boom.gif";
+                
+                }
+                    
+                    
+
+
+                    smallplanearray[i].dead = true;
+
+                    myplane.timer--;
+
+
+                    if (myplane.timer == 0) {
+
+                        blood.innerHTML = parseInt(blood.innerHTML) - 1;
+                        killnum.innerHTML = parseInt(killnum.innerHTML) + 1;
+                        if (/boom2\.gif$/.test(smallplanearray[i].imgnode.src)) {
+                        points.innerHTML = parseInt(points.innerHTML) + 2;}else{
+                            points.innerHTML = parseInt(points.innerHTML) + 10;
+                        }
+                        myplane.timer = 10;
+
+                    
+                }
+
+                    if (parseInt(blood.innerHTML) == 0) {
+                        myplane.imgnode.src = 'image/myplaneboom.gif';
+                        myplane.timer2--;
+                        if (myplane.timer2 == 0) {
+                            myplane.timer2 = 2;
+                            mystopgame();
+                        }
+                    }
+
+                }
+
+
+
+
+            }
+        }
+
+
+
+
+
+
+
+
+
+        function newgame() {
+
+
+            clearInterval(smallplanetimer);
+            clearInterval(smallplanemovetimer);
+            clearInterval(ctrlplaytimer);
+            clearInterval(bulletmovetimer);
+            clearInterval(crashchecktimer);
+            clearInterval(crashbodytimer);
+
+
+
+            stop.style.display = "none";
+
+            for (var i = 0; i < smallplanearray.length; i++) {
+                mainobj.removeChild(smallplanearray[i].imgnode);
+            }
+            smallplanearray = [];
+            for (var i = 0; i < bulletarray.length; i++) {
+                mainobj.removeChild(bulletarray[i].imgnode);
+            }
+            bulletarray = [];
+
+            killnum.innerHTML = 0;
+            points.innerHTML = 0;
+            blood.innerHTML = 3;
+
+            mainobj.removeChild(myplane.imgnode);
+
+
+            myplane = new myplanef("image/myplane.gif", 167, 500, 10);
+
+
+            smallplanetimer = setInterval(createSmallPlane, 1000);
+            smallplanemovetimer = setInterval(smallplanemove, 50);
+            ctrlplaytimer = setInterval(btnpress, 50);
+            bulletmovetimer = setInterval(bulletmove, 50);
+            crashbodytimer = setInterval(crashbody, 50);
+            crashchecktimer = setInterval(crashshoot, 50);
+            backgroundmusic.pause();
+          
+             startmusicf();
+
+
+        }
+
+
+
+
+
+
+    </script>
+</body>
+
+</html>
